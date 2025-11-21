@@ -9,7 +9,7 @@ import { MenuComponent } from './menu/menu';
     <div class="app-container">
       <app-menu></app-menu>
       <main class="content">
-        <h1>Contenido Principal</h1>
+        <h1>Contenido de para resetas y busquedas</h1>
       </main>
     </div>
   `,
