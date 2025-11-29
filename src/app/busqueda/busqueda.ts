@@ -23,6 +23,12 @@ import { FormsModule } from '@angular/forms';
           </svg>
         </button>
       </div>
+      <button class="login-btn" (click)="onLogin()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+        </svg>
+        Iniciar sesión
+      </button>
     </div>
   `,
   styles: [`
@@ -30,21 +36,23 @@ import { FormsModule } from '@angular/forms';
       display: flex;
       align-items: center;
       gap: 12px;
-      width: 700px;
+      max-width: 640px;
+      width: 100%;
     }
 
     .search-box {
       display: flex;
       flex: 1;
       height: 40px;
-      border: 1px solid #110808ff;
+      border: 1px solid #ccc;
+      border-radius: 40px;
       overflow: hidden;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .search-box.focused {
-      border-color: #25a858ff;
-      box-shadow: 0 0 0 1px #15a528ff inset;
+      border-color: #1c62b9;
+      box-shadow: 0 0 0 1px #1c62b9 inset;
     }
 
     .search-box input {
@@ -54,12 +62,13 @@ import { FormsModule } from '@angular/forms';
       outline: none;
       font-size: 16px;
       font-family: 'Roboto', Arial, sans-serif;
-      background: #ffffffff;
+      background: #fff;
     }
 
     .search-box input::placeholder {
       color: #888;
     }
+
     .search-btn {
       display: flex;
       align-items: center;
@@ -81,6 +90,54 @@ import { FormsModule } from '@angular/forms';
       height: 24px;
       color: #606060;
     }
+
+    .mic-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: #f8f8f8;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .mic-btn:hover {
+      background: #e8e8e8;
+    }
+
+    .mic-btn svg {
+      width: 24px;
+      height: 24px;
+      color: #606060;
+    }
+
+    .login-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid #065fd4;
+      border-radius: 40px;
+      background: transparent;
+      color: #065fd4;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'Roboto', Arial, sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .login-btn:hover {
+      background: #def1ff;
+    }
+
+    .login-btn svg {
+      flex-shrink: 0;
+    }
   `]
 })
 export class BusquedaComponent {
@@ -88,11 +145,15 @@ export class BusquedaComponent {
   isFocused: boolean = false;
 
   @Output() search = new EventEmitter<string>();
+  @Output() openLogin = new EventEmitter<void>();
 
   onSearch(): void {
     if (this.searchQuery.trim()) {
       this.search.emit(this.searchQuery);
       console.log('Buscando:', this.searchQuery);
     }
+  }
+  onLogin(): void {
+    this.openLogin.emit();
   }
 }
