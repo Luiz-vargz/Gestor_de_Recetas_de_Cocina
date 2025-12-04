@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -28,6 +28,12 @@ import { FormsModule } from '@angular/forms';
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
         </svg>
         Iniciar sesión
+      </button>
+      <button class="crear-receta-btn" (click)="onCrearReceta()" *ngIf="isLoggedIn">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+      </svg>
+       Nueva Receta
       </button>
     </div>
   `,
@@ -138,6 +144,26 @@ import { FormsModule } from '@angular/forms';
     .login-btn svg {
       flex-shrink: 0;
     }
+    .crear-receta-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #2e7d32;
+  border-radius: 40px;
+  background: transparent;
+  color: #2e7d32;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Roboto', Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.crear-receta-btn:hover {
+  background: #e8f5e9;
+}
   `]
 })
 export class BusquedaComponent {
@@ -146,6 +172,8 @@ export class BusquedaComponent {
 
   @Output() search = new EventEmitter<string>();
   @Output() openLogin = new EventEmitter<void>();
+  @Output() openCrearReceta = new EventEmitter<void>();
+  @Input() isLoggedIn: boolean = false;
 
   onSearch(): void {
     if (this.searchQuery.trim()) {
@@ -156,4 +184,7 @@ export class BusquedaComponent {
   onLogin(): void {
     this.openLogin.emit();
   }
+  onCrearReceta(): void {
+  this.openCrearReceta.emit();
+}
 }
