@@ -9,3 +9,9 @@ export interface Receta {
   userEmail?: string;
   createdAt?: any;
 }
+export interface Favorito {
+  id?: string;
+  userId: string;
+  recetaId: string;
+  createdAt?: any;
+}

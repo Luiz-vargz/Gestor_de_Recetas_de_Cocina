@@ -26,7 +26,7 @@ import { Receta } from './models/receta.model';
   ],
   template: `
     <div class="app-container">
-      <app-menu></app-menu>
+      <app-menu (menuSeleccionado)="cambiarVista($event)"></app-menu>
       <div class="main-content">
         <header class="header">
           <app-busqueda 
@@ -43,11 +43,13 @@ import { Receta } from './models/receta.model';
         
         <main class="content">
           <app-lista-recetas
-            [recetas]="recetas"
-            [currentUserId]="currentUser?.uid"
-            (verReceta)="abrirVerReceta($event)"
-            (editarReceta)="abrirEditarReceta($event)"
-            (eliminarReceta)="eliminarReceta($event)">
+                [recetas]="recetas"
+                [currentUserId]="currentUser?.uid"
+                [soloFavoritos]="vistaActual === 'favoritos'"
+                [soloPublicaciones]="vistaActual === 'publicaciones'"
+                (verReceta)="abrirVerReceta($event)"
+                (editarReceta)="abrirEditarReceta($event)"
+                (eliminarReceta)="eliminarReceta($event)">
           </app-lista-recetas>
         </main>
       </div>
@@ -134,6 +136,7 @@ export class AppComponent implements OnInit {
   recetas: Receta[] = [];
   recetaSeleccionada: Receta | null = null;
   recetaEditar: Receta | undefined = undefined;
+  vistaActual: string = 'todas';
 
   constructor(
     private authService: AuthService,
@@ -208,5 +211,14 @@ export class AppComponent implements OnInit {
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
+  }
+  cambiarVista(menuId: string) {
+  if (menuId === 'favoritos') {
+    this.vistaActual = 'favoritos';
+  } else if (menuId == 'publicaciones') {
+    this.vistaActual = 'publicaciones';
+  } else if (menuId === 'recetas') {
+    this.vistaActual = 'todas';
+  }
   }
 }

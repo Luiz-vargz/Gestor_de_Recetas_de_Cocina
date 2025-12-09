@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
 
 interface MenuItem {
   id: string;
@@ -133,6 +134,7 @@ interface MenuItem {
 })
 export class MenuComponent {
   isCollapsed = false;
+  @Output() menuSeleccionado = new EventEmitter<string>();
 
   menuItems: MenuItem[] = [
     {
@@ -143,21 +145,21 @@ export class MenuComponent {
       </svg>`,
       active: true
     },
+  {
+    id: 'publicaciones',
+    label: 'Mis Publicaciones',
+    icon: `<svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+    </svg>`,
+    active: false
+  },
     {
-      id: 'categorias',
-      label: 'Categorías',
+      id: 'favoritos',
+      label: 'Favoritos',
       icon: `<svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/>
-      </svg>`,
-      active: false
-    },
-    {
-      id: 'otros',
-      label: 'Otros',
-      icon: `<svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-      </svg>`,
-      active: false
+       <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+    </svg>`,
+    active: false
     }
   ];
 
@@ -168,6 +170,7 @@ export class MenuComponent {
   selectItem(selectedItem: MenuItem): void {
     this.menuItems.forEach(item => item.active = false);
     selectedItem.active = true;
+    this.menuSeleccionado.emit(selectedItem.id)
     console.log('Seleccionado:', selectedItem.id);
   }
 }
