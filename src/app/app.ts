@@ -1,40 +1,42 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { RouterOutlet } from '@angular/router';
 import { MenuComponent } from './menu/menu';
 import { BusquedaComponent } from './busqueda/busqueda';
 import { LoginComponent } from './login/login';
 import { CrearRecetaComponent } from './components/crear-receta/crear-receta';
-import { ListaRecetasComponent } from './components/lista-recetas/lista-recetas';
-import { VerRecetaComponent } from './components/ver-receta/ver-receta';
 import { AuthService } from './services/auth.service';
-import { RecetasService } from './services/recetas.service';
+import { Router } from '@angular/router';
+import { ModalService } from './services/modal.service';
 import { Receta } from './models/receta.model';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule,
-    MenuComponent, 
-    BusquedaComponent, 
+    CommonModule,
+    RouterOutlet,
+    MenuComponent,
+    BusquedaComponent,
     LoginComponent,
-    CrearRecetaComponent,
-    ListaRecetasComponent,
-    VerRecetaComponent
+    CrearRecetaComponent
   ],
   template: `
     <div class="app-container">
-      <app-menu (menuSeleccionado)="cambiarVista($event)"></app-menu>
+      <app-menu
+        [isLoggedIn]="!!currentUser"
+        (menuSeleccionado)="navegarA($event)">
+      </app-menu>
+      
       <div class="main-content">
         <header class="header">
           <app-busqueda 
             [isLoggedIn]="!!currentUser"
-            (search)="onSearch($event)"
+            (search)="buscarRecetas($event)"
             (openLogin)="showLogin = true"
             (openCrearReceta)="abrirCrearReceta()">
           </app-busqueda>
+          
           <div class="user-info" *ngIf="currentUser">
             <span>{{ currentUser.email }}</span>
             <button (click)="onLogout()" class="logout-btn">Cerrar sesión</button>
@@ -42,15 +44,7 @@ import { Receta } from './models/receta.model';
         </header>
         
         <main class="content">
-          <app-lista-recetas
-                [recetas]="recetas"
-                [currentUserId]="currentUser?.uid"
-                [soloFavoritos]="vistaActual === 'favoritos'"
-                [soloPublicaciones]="vistaActual === 'publicaciones'"
-                (verReceta)="abrirVerReceta($event)"
-                (editarReceta)="abrirEditarReceta($event)"
-                (eliminarReceta)="eliminarReceta($event)">
-          </app-lista-recetas>
+          <router-outlet></router-outlet>
         </main>
       </div>
     </div>
@@ -62,22 +56,15 @@ import { Receta } from './models/receta.model';
       (loginSuccess)="onLoginSuccess($event)">
     </app-login>
 
-    <!-- Modal Crear/Editar Receta -->
+    <!-- Modal Crear Receta -->
     <app-crear-receta
       *ngIf="showCrearReceta"
       [userId]="currentUser?.uid || ''"
       [userEmail]="currentUser?.email || ''"
       [recetaEditar]="recetaEditar"
       (close)="cerrarCrearReceta()"
-      (recetaCreada)="cargarRecetas()">
+      (recetaCreada)="recetaCreada()">
     </app-crear-receta>
-
-    <!-- Modal Ver Receta -->
-    <app-ver-receta
-      *ngIf="recetaSeleccionada"
-      [receta]="recetaSeleccionada"
-      (close)="recetaSeleccionada = null">
-    </app-ver-receta>
   `,
   styles: [`
     .app-container { 
@@ -129,37 +116,43 @@ import { Receta } from './models/receta.model';
     }
   `]
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   showLogin = false;
   showCrearReceta = false;
   currentUser: any = null;
-  recetas: Receta[] = [];
-  recetaSeleccionada: Receta | null = null;
-  recetaEditar: Receta | undefined = undefined;
-  vistaActual: string = 'todas';
+  recetaEditar: any = undefined;
 
   constructor(
-    private authService: AuthService,
-    private recetasService: RecetasService
-  )
-   {
-    this.authService.user$.subscribe(user => {
-      this.currentUser = user;
-      this.cargarRecetas();
-    });
+  private authService: AuthService,
+  private router: Router,
+  private modalService: ModalService
+  ) {
+  this.authService.user$.subscribe(user => {
+    this.currentUser = user;
+  });
+
+  // Escuchar eventos de editar receta
+  this.modalService.editarReceta$.subscribe(receta => {
+    this.recetaEditar = receta;
+    this.showCrearReceta = true;
+  });
   }
 
-  ngOnInit() {
-    this.cargarRecetas();
+  navegarA(menuId: string) {
+    const rutas: any = {
+      'recetas': '/home',
+      'publicaciones': '/mis-recetas',
+      'favoritos': '/favoritos'
+    };
+    
+    if (rutas[menuId]) {
+      this.router.navigate([rutas[menuId]]);
+    }
   }
 
-  async cargarRecetas() {
-    this.recetas = await this.recetasService.obtenerRecetas();
-  }
-
-  onSearch(query: string) {
-    console.log('Búsqueda recibida:', query);
-    // Aquí puedes implementar la búsqueda de recetas
+  buscarRecetas(query: string) {
+    // Navegar a home con parámetro de búsqueda
+    this.router.navigate(['/home'], { queryParams: { busqueda: query } });
   }
 
   abrirCrearReceta() {
@@ -172,53 +165,32 @@ export class AppComponent implements OnInit {
     this.showCrearReceta = true;
   }
 
-  abrirEditarReceta(receta: Receta) {
-    this.recetaEditar = receta;
-    this.showCrearReceta = true;
-  }
-
   cerrarCrearReceta() {
     this.showCrearReceta = false;
     this.recetaEditar = undefined;
   }
 
-  abrirVerReceta(receta: Receta) {
-    this.recetaSeleccionada = receta;
-  }
-
-  async eliminarReceta(receta: Receta) {
-    if (receta.id) {
-      try {
-        await this.recetasService.eliminarReceta(receta.id);
-        await this.cargarRecetas();
-      } catch (error) {
-        alert('Error al eliminar la receta');
-      }
-    }
+  recetaCreada() {
+    this.cerrarCrearReceta();
+    // Recargar la página actual
+    window.location.reload();
   }
 
   onLoginSuccess(data: any) {
-    console.log('Login exitoso:', data.user.email);
     this.showLogin = false;
-    this.cargarRecetas();
   }
 
   async onLogout() {
     try {
       await this.authService.logout();
-      this.recetas = [];
-      console.log('Sesión cerrada');
+      this.router.navigate(['/home']);
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }
   }
-  cambiarVista(menuId: string) {
-  if (menuId === 'favoritos') {
-    this.vistaActual = 'favoritos';
-  } else if (menuId == 'publicaciones') {
-    this.vistaActual = 'publicaciones';
-  } else if (menuId === 'recetas') {
-    this.vistaActual = 'todas';
+  editarReceta(receta: Receta) {
+  this.recetaEditar = receta;
+  this.showCrearReceta = true;
   }
-  }
+  
 }

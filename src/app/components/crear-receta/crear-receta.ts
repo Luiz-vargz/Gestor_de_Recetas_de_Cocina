@@ -1,13 +1,13 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { RecetasService } from '../../services/recetas.service';
 import { Receta } from '../../models/receta.model';
 
 @Component({
   selector: 'app-crear-receta',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="modal-overlay" (click)="onClose()">
       <div class="modal-container" (click)="$event.stopPropagation()">
@@ -24,22 +24,31 @@ import { Receta } from '../../models/receta.model';
           {{ errorMessage }}
         </div>
 
-        <form class="receta-form" (ngSubmit)="onSubmit()">
+        <form class="receta-form" [formGroup]="recetaForm" (ngSubmit)="onSubmit()">
+          <!-- Título -->
           <div class="form-group">
             <label for="titulo">Título *</label>
             <input
               id="titulo"
               type="text"
-              [(ngModel)]="titulo"
-              name="titulo"
+              formControlName="titulo"
               placeholder="Ej: Paella Valenciana"
-              required
+              [class.invalid]="titulo?.invalid && titulo?.touched"
             />
+            <div class="error-text" *ngIf="titulo?.invalid && titulo?.touched">
+              <span *ngIf="titulo?.errors?.['required']">El título es obligatorio</span>
+              <span *ngIf="titulo?.errors?.['minlength']">Mínimo 3 caracteres</span>
+              <span *ngIf="titulo?.errors?.['maxlength']">Máximo 100 caracteres</span>
+            </div>
           </div>
 
+          <!-- Categoría -->
           <div class="form-group">
             <label for="categoria">Categoría *</label>
-            <select id="categoria" [(ngModel)]="categoria" name="categoria" required>
+            <select 
+              id="categoria" 
+              formControlName="categoria"
+              [class.invalid]="categoria?.invalid && categoria?.touched">
               <option value="">Selecciona una categoría</option>
               <option value="Desayuno">Desayuno</option>
               <option value="Almuerzo">Almuerzo</option>
@@ -49,60 +58,90 @@ import { Receta } from '../../models/receta.model';
               <option value="Entrada">Entrada</option>
               <option value="Snack">Snack</option>
             </select>
+            <div class="error-text" *ngIf="categoria?.invalid && categoria?.touched">
+              <span *ngIf="categoria?.errors?.['required']">Selecciona una categoría</span>
+            </div>
           </div>
 
+          <!-- Tiempo de preparación -->
           <div class="form-group">
             <label for="tiempo">Tiempo de preparación (minutos) *</label>
             <input
               id="tiempo"
               type="number"
-              [(ngModel)]="tiempo_preparacion"
-              name="tiempo"
+              formControlName="tiempo_preparacion"
               placeholder="30"
-              min="1"
-              required
+              [class.invalid]="tiempo_preparacion?.invalid && tiempo_preparacion?.touched"
             />
+            <div class="error-text" *ngIf="tiempo_preparacion?.invalid && tiempo_preparacion?.touched">
+              <span *ngIf="tiempo_preparacion?.errors?.['required']">El tiempo es obligatorio</span>
+              <span *ngIf="tiempo_preparacion?.errors?.['min']">Mínimo 1 minuto</span>
+              <span *ngIf="tiempo_preparacion?.errors?.['max']">Máximo 1440 minutos (24 horas)</span>
+            </div>
           </div>
 
+          <!-- Descripción -->
+          <div class="form-group">
+            <label for="descripcion">Descripción breve</label>
+            <textarea
+              id="descripcion"
+              formControlName="descripcion"
+              placeholder="Describe tu receta en pocas palabras..."
+              rows="3"
+              [class.invalid]="descripcion?.invalid && descripcion?.touched"
+            ></textarea>
+            <div class="error-text" *ngIf="descripcion?.invalid && descripcion?.touched">
+              <span *ngIf="descripcion?.errors?.['maxlength']">Máximo 500 caracteres</span>
+            </div>
+          </div>
+
+          <!-- Ingredientes -->
           <div class="form-group">
             <label>Ingredientes *</label>
-            <div class="list-items">
-              <div class="list-item" *ngFor="let ing of ingredientes; let i = index; trackBy: trackByIndex">
+            <div class="list-items" formArrayName="ingredientes">
+              <div class="list-item" *ngFor="let ingrediente of ingredientes.controls; let i = index">
                 <input
                   type="text"
-                  [(ngModel)]="ingredientes[i]"
-                  [name]="'ingrediente-' + i"
+                  [formControlName]="i"
                   placeholder="Ej: 500g de arroz"
+                  [class.invalid]="ingredientes.at(i).invalid && ingredientes.at(i).touched"
                 />
-                <button type="button" class="remove-btn" (click)="eliminarIngrediente(i)">
+                <button type="button" class="remove-btn" (click)="eliminarIngrediente(i)" *ngIf="ingredientes.length > 1">
                   <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                   </svg>
                 </button>
               </div>
             </div>
+            <div class="error-text" *ngIf="ingredientes.invalid && ingredientes.touched">
+              <span>Agrega al menos un ingrediente válido</span>
+            </div>
             <button type="button" class="add-btn" (click)="agregarIngrediente()">
               + Agregar ingrediente
             </button>
           </div>
 
+          <!-- Pasos -->
           <div class="form-group">
             <label>Pasos de preparación *</label>
-            <div class="list-items">
-              <div class="list-item" *ngFor="let paso of pasos; let i = index; trackBy: trackByIndex">
+            <div class="list-items" formArrayName="pasos">
+              <div class="list-item" *ngFor="let paso of pasos.controls; let i = index">
                 <span class="step-number">{{ i + 1 }}</span>
                 <textarea
-                  [(ngModel)]="pasos[i]"
-                  [name]="'paso-' + i"
+                  [formControlName]="i"
                   placeholder="Describe el paso..."
                   rows="2"
+                  [class.invalid]="pasos.at(i).invalid && pasos.at(i).touched"
                 ></textarea>
-                <button type="button" class="remove-btn" (click)="eliminarPaso(i)">
+                <button type="button" class="remove-btn" (click)="eliminarPaso(i)" *ngIf="pasos.length > 1">
                   <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                   </svg>
                 </button>
               </div>
+            </div>
+            <div class="error-text" *ngIf="pasos.invalid && pasos.touched">
+              <span>Agrega al menos un paso válido</span>
             </div>
             <button type="button" class="add-btn" (click)="agregarPaso()">
               + Agregar paso
@@ -113,9 +152,13 @@ import { Receta } from '../../models/receta.model';
             <button type="button" class="cancel-btn" (click)="onClose()">
               Cancelar
             </button>
-            <button type="submit" class="submit-btn" [disabled]="loading">
+            <button type="submit" class="submit-btn" [disabled]="loading || recetaForm.invalid">
               {{ loading ? 'Guardando...' : (recetaEditar ? 'Actualizar' : 'Publicar') }}
             </button>
+          </div>
+
+          <div class="form-status" *ngIf="recetaForm.invalid && recetaForm.touched">
+            <small>Por favor, completa todos los campos requeridos correctamente</small>
           </div>
         </form>
       </div>
@@ -236,6 +279,18 @@ import { Receta } from '../../models/receta.model';
       border-color: #065fd4;
     }
 
+    .form-group input.invalid,
+    .form-group select.invalid,
+    .form-group textarea.invalid {
+      border-color: #d32f2f;
+    }
+
+    .error-text {
+      color: #d32f2f;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
     .list-items {
       display: flex;
       flex-direction: column;
@@ -348,72 +403,126 @@ import { Receta } from '../../models/receta.model';
       background: #ccc;
       cursor: not-allowed;
     }
+
+    .form-status {
+      text-align: center;
+      color: #d32f2f;
+      font-size: 13px;
+      padding: 12px;
+      background: #fee;
+      border-radius: 8px;
+    }
   `]
 })
-export class CrearRecetaComponent {
+export class CrearRecetaComponent implements OnInit {
   @Input() userId!: string;
   @Input() userEmail!: string;
   @Input() recetaEditar?: Receta;
   @Output() close = new EventEmitter<void>();
   @Output() recetaCreada = new EventEmitter<void>();
 
-  titulo: string = '';
-  categoria: string = '';
-  tiempo_preparacion: number = 0;
-  ingredientes: string[] = [''];
-  pasos: string[] = [''];
+  recetaForm!: FormGroup;
   errorMessage: string = '';
   loading: boolean = false;
 
-  constructor(private recetasService: RecetasService) {}
+  constructor(
+    private fb: FormBuilder,
+    private recetasService: RecetasService
+  ) {}
 
   ngOnInit() {
+    this.inicializarFormulario();
     if (this.recetaEditar) {
-      this.titulo = this.recetaEditar.titulo;
-      this.categoria = this.recetaEditar.categoria;
-      this.tiempo_preparacion = this.recetaEditar.tiempo_preparacion;
-      this.ingredientes = [...this.recetaEditar.ingredientes];
-      this.pasos = [...this.recetaEditar.pasos];
+      this.cargarDatosReceta();
     }
   }
 
+  inicializarFormulario() {
+    this.recetaForm = this.fb.group({
+      titulo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+      categoria: ['', Validators.required],
+      tiempo_preparacion: ['', [Validators.required, Validators.min(1), Validators.max(1440)]],
+      descripcion: ['', Validators.maxLength(500)],
+      ingredientes: this.fb.array([this.fb.control('', Validators.required)]),
+      pasos: this.fb.array([this.fb.control('', Validators.required)])
+    });
+  }
+
+  cargarDatosReceta() {
+    if (this.recetaEditar) {
+      this.recetaForm.patchValue({
+        titulo: this.recetaEditar.titulo,
+        categoria: this.recetaEditar.categoria,
+        tiempo_preparacion: this.recetaEditar.tiempo_preparacion,
+        descripcion: ''
+      });
+
+      // Limpiar arrays
+      this.ingredientes.clear();
+      this.pasos.clear();
+
+      // Cargar ingredientes
+      this.recetaEditar.ingredientes.forEach(ing => {
+        this.ingredientes.push(this.fb.control(ing, Validators.required));
+      });
+
+      // Cargar pasos
+      this.recetaEditar.pasos.forEach(paso => {
+        this.pasos.push(this.fb.control(paso, Validators.required));
+      });
+    }
+  }
+
+  get titulo() {
+    return this.recetaForm.get('titulo');
+  }
+
+  get categoria() {
+    return this.recetaForm.get('categoria');
+  }
+
+  get tiempo_preparacion() {
+    return this.recetaForm.get('tiempo_preparacion');
+  }
+
+  get descripcion() {
+    return this.recetaForm.get('descripcion');
+  }
+
+  get ingredientes() {
+    return this.recetaForm.get('ingredientes') as FormArray;
+  }
+
+  get pasos() {
+    return this.recetaForm.get('pasos') as FormArray;
+  }
+
   agregarIngrediente() {
-    this.ingredientes.push('');
+    this.ingredientes.push(this.fb.control('', Validators.required));
   }
 
   eliminarIngrediente(index: number) {
     if (this.ingredientes.length > 1) {
-      this.ingredientes.splice(index, 1);
+      this.ingredientes.removeAt(index);
     }
   }
 
   agregarPaso() {
-    this.pasos.push('');
+    this.pasos.push(this.fb.control('', Validators.required));
   }
 
   eliminarPaso(index: number) {
     if (this.pasos.length > 1) {
-      this.pasos.splice(index, 1);
+      this.pasos.removeAt(index);
     }
   }
 
   async onSubmit() {
-    // Validaciones
-    if (!this.titulo || !this.categoria || !this.tiempo_preparacion) {
-      this.errorMessage = 'Por favor completa todos los campos requeridos';
-      return;
-    }
-
-    const ingredientesFiltrados = this.ingredientes.filter(i => i.trim() !== '');
-    const pasosFiltrados = this.pasos.filter(p => p.trim() !== '');
-
-    if (ingredientesFiltrados.length === 0) {
-      this.errorMessage = 'Agrega al menos un ingrediente';
-      return;
-    }
-
-    if (pasosFiltrados.length === 0) {
-      this.errorMessage = 'Agrega al menos un paso';
+    if (this.recetaForm.invalid) {
+      Object.keys(this.recetaForm.controls).forEach(key => {
+        this.recetaForm.get(key)?.markAsTouched();
+      });
+      this.errorMessage = 'Por favor, completa todos los campos correctamente';
       return;
     }
 
@@ -421,12 +530,18 @@ export class CrearRecetaComponent {
     this.loading = true;
 
     try {
+      const formValue = this.recetaForm.value;
+      
+      // Filtrar ingredientes y pasos vacíos
+      const ingredientesFiltrados = formValue.ingredientes.filter((i: string) => i.trim() !== '');
+      const pasosFiltrados = formValue.pasos.filter((p: string) => p.trim() !== '');
+
       const receta: Receta = {
-        titulo: this.titulo,
+        titulo: formValue.titulo,
         ingredientes: ingredientesFiltrados,
         pasos: pasosFiltrados,
-        categoria: this.categoria,
-        tiempo_preparacion: this.tiempo_preparacion,
+        categoria: formValue.categoria,
+        tiempo_preparacion: formValue.tiempo_preparacion,
         userId: this.userId,
         userEmail: this.userEmail
       };
@@ -449,7 +564,4 @@ export class CrearRecetaComponent {
   onClose() {
     this.close.emit();
   }
-  trackByIndex(index: number): number {
-  return index;
-}
 }

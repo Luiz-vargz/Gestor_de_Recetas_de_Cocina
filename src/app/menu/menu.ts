@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 
@@ -25,7 +25,7 @@ interface MenuItem {
       <!-- Menu Items -->
       <nav class="menu">
         <button 
-          *ngFor="let item of menuItems" 
+          *ngFor="let item of menuItemsVisibles" 
           class="menu-item"
           [class.active]="item.active"
           (click)="selectItem(item)">
@@ -134,11 +134,12 @@ interface MenuItem {
 })
 export class MenuComponent {
   isCollapsed = false;
+  @Input() isLoggedIn: boolean = false;
   @Output() menuSeleccionado = new EventEmitter<string>();
 
   menuItems: MenuItem[] = [
     {
-      id: 'Recetas',
+      id: 'recetas',
       label: 'Recetas',
       icon: `<svg viewBox="0 0 24 24" fill="currentColor">
         <path d="M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z"/>
@@ -172,5 +173,16 @@ export class MenuComponent {
     selectedItem.active = true;
     this.menuSeleccionado.emit(selectedItem.id)
     console.log('Seleccionado:', selectedItem.id);
+  }
+  //metodo de acceso
+  get menuItemsVisibles(): MenuItem[] {
+  if (!this.isLoggedIn) {
+    // Si no está logueado, solo mostrar "Recetas" y "Categorías"
+    return this.menuItems.filter(item => 
+      item.id === 'recetas' || item.id === 'categorias' || item.id === 'otros'
+    );
+  }
+  // Si está logueado, mostrar todo
+  return this.menuItems;
   }
 }

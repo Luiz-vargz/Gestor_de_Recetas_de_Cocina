@@ -8,48 +8,50 @@ import { Receta } from '../../models/receta.model';
   imports: [CommonModule],
   template: `
     <div class="modal-overlay" (click)="close.emit()">
-      <div class="modal-container" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <div>
-            <span class="categoria">{{ receta.categoria }}</span>
-            <h2>{{ receta.titulo }}</h2>
-            <p class="autor">Por: {{ receta.userEmail }}</p>
-          </div>
-          <button class="close-btn" (click)="close.emit()">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          </button>
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <span class="categoria">{{ receta.categoria }}</span>
+          <h2>{{ receta.titulo }}</h2>
+          <p class="autor">Por: {{ receta.userEmail }}</p>
+        </div>
+        <button class="close-btn" (click)="close.emit()">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-content">
+        <div class="tiempo-badge">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+          </svg>
+          {{ receta.tiempo_preparacion }} minutos
         </div>
 
-        <div class="modal-content">
-          <div class="tiempo-badge">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
-            </svg>
-            {{ receta.tiempo_preparacion }} minutos
+        <section class="section">
+          <h3>Ingredientes</h3>
+          <div class="ingredientes-list">
+            <div class="ingrediente-item" *ngFor="let ingrediente of receta.ingredientes">
+              <span class="bullet">•</span>
+              <span>{{ ingrediente }}</span>
+            </div>
           </div>
+        </section>
 
-          <section class="section">
-            <h3>Ingredientes</h3>
-            <ul class="ingredientes-list">
-              <li *ngFor="let ingrediente of receta.ingredientes">
-                {{ ingrediente }}
-              </li>
-            </ul>
-          </section>
-
-          <section class="section">
-            <h3>Preparación</h3>
-            <ol class="pasos-list">
-              <li *ngFor="let paso of receta.pasos">
-                {{ paso }}
-              </li>
-            </ol>
-          </section>
-        </div>
+        <section class="section">
+          <h3>Preparación</h3>
+          <div class="pasos-list">
+            <div class="paso-item" *ngFor="let paso of receta.pasos; let i = index">
+              <span class="paso-numero">{{ i + 1 }}</span>
+              <p>{{ paso }}</p>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
+  </div>
   `,
   styles: [`
     .modal-overlay {
@@ -184,6 +186,63 @@ import { Receta } from '../../models/receta.model';
     .pasos-list li {
       margin-bottom: 16px;
     }
+    .ingredientes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ingrediente-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.bullet {
+  font-size: 24px;
+  color: #2e7d32;
+  font-weight: bold;
+  line-height: 1.4;
+}
+
+.pasos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.paso-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.paso-numero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  background: #065fd4;
+  color: white;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.paso-item p {
+  margin: 0;
+  padding-top: 4px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #0f0f0f;
+}
   `]
 })
 export class VerRecetaComponent {

@@ -1,100 +1,112 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
+import { TiempoPipe } from '../../pipes/tiempo.pipe';
+import { DatePipe, UpperCasePipe } from '@angular/common';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Receta, Favorito } from '../../models/receta.model';
 import { RecetasService } from '../../services/recetas.service';
 import { FavoritosService } from '../../services/favoritos.service';
-
 @Component({
   selector: 'app-lista-recetas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TiempoPipe, DatePipe, UpperCasePipe],
   template: `
-    <div class="recetas-container">
-      <div class="recetas-header">
-        <h2>{{ soloFavoritos ? 'Mis Favoritos' : (soloPublicaciones ? 'Mis Publicaciones' : 'Recetas Publicadas') }}</h2>
-        <div class="filtros">
-          <select [(ngModel)]="filtroCategoria" (change)="filtrarRecetas()">
-            <option value="">Todas las categorías</option>
-            <option value="Desayuno">Desayuno</option>
-            <option value="Almuerzo">Almuerzo</option>
-            <option value="Cena">Cena</option>
-            <option value="Postre">Postre</option>
-            <option value="Bebida">Bebida</option>
-            <option value="Entrada">Entrada</option>
-            <option value="Snack">Snack</option>
-          </select>
-        </div>
-      </div>
+  <div class="recetas-container">
+    <div class="recetas-header">
+      <h2>{{ soloFavoritos ? 'Mis Favoritos' : (soloPublicaciones ? 'Mis Publicaciones' : 'Todas las Recetas') }}</h2>
+      <div class="filtros">
+        <select [(ngModel)]="filtroCategoria" (change)="filtrarRecetas()">
+          <option value="">Todas las categorías</option>
+          <option value="Desayuno">Desayuno</option>
+          <option value="Almuerzo">Almuerzo</option>
+          <option value="Cena">Cena</option>
+          <option value="Postre">Postre</option>
+          <option value="Bebida">Bebida</option>
+          <option value="Entrada">Entrada</option>
+          <option value="Snack">Snack</option>
+        </select>
 
-      <div class="recetas-grid" *ngIf="recetasFiltradas.length > 0">
-        <div class="receta-card" *ngFor="let receta of recetasFiltradas">
-          <!-- Botón de Favorito -->
-          <button 
-            class="favorito-btn" 
-            [class.favorito-activo]="esFavorita(receta.id)"
-            (click)="toggleFavorito(receta)"
-            *ngIf="currentUserId"
-            title="{{ esFavorita(receta.id) ? 'Quitar de favoritos' : 'Agregar a favoritos' }}">
-            <svg viewBox="0 0 24 24" [attr.fill]="esFavorita(receta.id) ? '#ff0000' : 'none'" stroke="currentColor" stroke-width="2">
-              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-            </svg>
-          </button>
-
-          <div class="receta-header">
-            <div class="receta-categoria">{{ receta.categoria }}</div>
-            <div class="receta-tiempo">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
-              </svg>
-              {{ receta.tiempo_preparacion }} min
-            </div>
-          </div>
-          
-          <h3 class="receta-titulo">{{ receta.titulo }}</h3>
-          
-          <div class="receta-autor">
-            Por: {{ receta.userEmail }}
-          </div>
-
-          <div class="receta-info">
-            <div class="info-item">
-              <strong>{{ receta.ingredientes.length }}</strong> ingredientes
-            </div>
-            <div class="info-item">
-              <strong>{{ receta.pasos.length }}</strong> pasos
-            </div>
-          </div>
-
-          <button class="ver-btn" (click)="verReceta.emit(receta)">
-            Ver receta completa
-          </button>
-
-          <div class="receta-actions" *ngIf="currentUserId && receta.userId === currentUserId">
-            <button class="edit-btn" (click)="editarReceta.emit(receta)">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-              </svg>
-              Editar
-            </button>
-            <button class="delete-btn" (click)="confirmarEliminar(receta)">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-              </svg>
-              Eliminar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="empty-state" *ngIf="recetasFiltradas.length === 0">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
-          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-        </svg>
-        <h3>{{ soloFavoritos ? 'No tienes favoritos' : 'No hay recetas disponibles' }}</h3>
-        <p>{{ soloFavoritos ? 'Agrega recetas a favoritos para verlas aquí' : 'Sé el primero en compartir una receta deliciosa' }}</p>
+        <select [(ngModel)]="ordenActual" (change)="ordenarRecetas()" class="orden-select">
+          <option value="reciente">Más recientes</option>
+          <option value="antiguo">Más antiguos</option>
+          <option value="az">Nombre (A-Z)</option>
+          <option value="za">Nombre (Z-A)</option>
+          <option value="rapido">Más rápidas</option>
+          <option value="lento">Más lentas</option>
+        </select>
       </div>
     </div>
+
+    <div class="recetas-grid" *ngIf="recetasFiltradas.length > 0">
+      <div class="receta-card" *ngFor="let receta of recetasFiltradas">
+        <!-- Botón de Favorito -->
+        <button 
+          class="favorito-btn" 
+          [class.favorito-activo]="esFavorita(receta.id)"
+          (click)="toggleFavorito(receta)"
+          *ngIf="currentUserId"
+          title="{{ esFavorita(receta.id) ? 'Quitar de favoritos' : 'Agregar a favoritos' }}">
+          <svg viewBox="0 0 24 24" [attr.fill]="esFavorita(receta.id) ? '#ff0000' : 'none'" stroke="currentColor" stroke-width="2">
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+          </svg>
+        </button>
+
+        <div class="receta-header">
+          <div class="receta-categoria">{{ receta.categoria }}</div>
+          <div class="receta-tiempo">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+            </svg>
+            {{ receta.tiempo_preparacion | tiempo }}
+          </div>
+        </div>
+        
+        <h3 class="receta-titulo">{{ receta.titulo | uppercase }}</h3>
+        
+        <div class="receta-autor">
+          Por: {{ receta.userEmail }}
+        </div>
+        <div class="receta-fecha" *ngIf="receta.createdAt">
+          Publicado: {{ receta.createdAt.toDate() | date:'dd/MM/yyyy' }}
+        </div>
+        <div class="receta-info">
+          <div class="info-item">
+            <strong>{{ receta.ingredientes.length }}</strong> ingredientes
+          </div>
+          <div class="info-item">
+            <strong>{{ receta.pasos.length }}</strong> pasos
+          </div>
+        </div>
+
+        <button class="ver-btn" (click)="verReceta.emit(receta)">
+          Ver receta completa
+        </button>
+
+        <div class="receta-actions" *ngIf="currentUserId && receta.userId === currentUserId">
+          <button class="edit-btn" (click)="editarReceta.emit(receta)">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+            Editar
+          </button>
+          <button class="delete-btn" (click)="confirmarEliminar(receta)">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="recetasFiltradas.length === 0">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
+        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+      </svg>
+      <h3>{{ soloFavoritos ? 'No tienes favoritos' : 'No hay recetas disponibles' }}</h3>
+      <p>{{ soloFavoritos ? 'Agrega recetas a favoritos para verlas aquí' : 'Sé el primero en compartir una receta deliciosa' }}</p>
+    </div>
+  </div>
   `,
   styles: [`
     .recetas-container {
@@ -317,6 +329,14 @@ import { FavoritosService } from '../../services/favoritos.service';
       margin: 0;
       font-size: 14px;
     }
+    .orden-select {
+  padding: 10px 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 12px;
+  }
   `]
 })
 export class ListaRecetasComponent implements OnInit, OnChanges {
@@ -324,6 +344,7 @@ export class ListaRecetasComponent implements OnInit, OnChanges {
   @Input() currentUserId?: string;
   @Input() soloFavoritos: boolean = false;
   @Input() soloPublicaciones: boolean = false;
+  @Input() terminoBusqueda: string = '';
   @Output() verReceta = new EventEmitter<Receta>();
   @Output() editarReceta = new EventEmitter<Receta>();
   @Output() eliminarReceta = new EventEmitter<Receta>();
@@ -331,6 +352,7 @@ export class ListaRecetasComponent implements OnInit, OnChanges {
   filtroCategoria: string = '';
   recetasFiltradas: Receta[] = [];
   favoritos: Favorito[] = [];
+  ordenActual: string = 'reciente'; // Puede ser: 'reciente', 'antiguo', 'az', 'za', 'rapido', 'lento'
 
   constructor(
     private recetasService: RecetasService,
@@ -341,10 +363,13 @@ export class ListaRecetasComponent implements OnInit, OnChanges {
     await this.cargarFavoritos();
     this.filtrarRecetas();
   }
-
-  async ngOnChanges() {
-    await this.cargarFavoritos();
-    this.filtrarRecetas();
+  
+  ngOnChanges(changes: SimpleChanges) {
+  if (changes['soloFavoritos'] || changes['soloPublicaciones'] || changes['recetas'] || changes['terminoBusqueda']) {
+    this.cargarFavoritos().then(() => {
+      this.filtrarRecetas();
+    });
+  }
   }
 
   async cargarFavoritos() {
@@ -352,28 +377,39 @@ export class ListaRecetasComponent implements OnInit, OnChanges {
       this.favoritos = await this.favoritosService.obtenerFavoritosPorUsuario(this.currentUserId);
     }
   }
-
   filtrarRecetas() {
-    let recetasBase = this.recetas;
+  let recetasBase = this.recetas;
 
-    // Si es la vista de favoritos, filtrar solo favoritos
-    if (this.soloFavoritos && this.currentUserId) {
-      const idsRecetasFavoritas = this.favoritos.map(f => f.recetaId);
-      recetasBase = this.recetas.filter(r => idsRecetasFavoritas.includes(r.id || ''));
-    }
-
-    //vistas de publicaciones
-    if (this.soloPublicaciones && this.currentUserId) {
-      recetasBase = this.recetas.filter(r => r.userId === this.currentUserId);
-    }
-
-    // Aplicar filtro de categoría
-    if (this.filtroCategoria) {
-      this.recetasFiltradas = recetasBase.filter(r => r.categoria === this.filtroCategoria);
-    } else {
-      this.recetasFiltradas = recetasBase;
-    }
+  // Vista de favoritos
+  if (this.soloFavoritos && this.currentUserId) {
+    const idsRecetasFavoritas = this.favoritos.map(f => f.recetaId);
+    recetasBase = this.recetas.filter(r => idsRecetasFavoritas.includes(r.id || ''));
   }
+  // Vista de mis publicaciones
+  else if (this.soloPublicaciones && this.currentUserId) {
+    recetasBase = this.recetas.filter(r => r.userId === this.currentUserId);
+  }
+
+  // Aplicar búsqueda por término
+  if (this.terminoBusqueda.trim()) {
+    const termino = this.terminoBusqueda.toLowerCase();
+    recetasBase = recetasBase.filter(r => 
+      r.titulo.toLowerCase().includes(termino) ||
+      r.categoria.toLowerCase().includes(termino) ||
+      r.ingredientes.some(i => i.toLowerCase().includes(termino))
+    );
+  }
+
+  // Aplicar filtro de categoría
+  if (this.filtroCategoria) {
+    this.recetasFiltradas = recetasBase.filter(r => r.categoria === this.filtroCategoria);
+  } else {
+    this.recetasFiltradas = recetasBase;
+  }
+
+  // Aplicar ordenamiento
+  this.ordenarRecetas();
+ }
 
   esFavorita(recetaId: string | undefined): boolean {
     if (!recetaId) return false;
@@ -406,4 +442,42 @@ export class ListaRecetasComponent implements OnInit, OnChanges {
       this.eliminarReceta.emit(receta);
     }
   }
+  ordenarRecetas() {
+  switch (this.ordenActual) {
+    case 'reciente':
+      this.recetasFiltradas.sort((a, b) => {
+        const fechaA = a.createdAt?.toMillis() || 0;
+        const fechaB = b.createdAt?.toMillis() || 0;
+        return fechaB - fechaA;
+      });
+      break;
+    case 'antiguo':
+      this.recetasFiltradas.sort((a, b) => {
+        const fechaA = a.createdAt?.toMillis() || 0;
+        const fechaB = b.createdAt?.toMillis() || 0;
+        return fechaA - fechaB;
+      });
+      break;
+    case 'az':
+      this.recetasFiltradas.sort((a, b) => 
+        a.titulo.localeCompare(b.titulo)
+      );
+      break;
+    case 'za':
+      this.recetasFiltradas.sort((a, b) => 
+        b.titulo.localeCompare(a.titulo)
+      );
+      break;
+    case 'rapido':
+      this.recetasFiltradas.sort((a, b) => 
+        a.tiempo_preparacion - b.tiempo_preparacion
+      );
+      break;
+    case 'lento':
+      this.recetasFiltradas.sort((a, b) => 
+        b.tiempo_preparacion - a.tiempo_preparacion
+      );
+      break;
+  }
+}
 }
