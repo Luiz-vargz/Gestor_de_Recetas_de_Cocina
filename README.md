@@ -190,6 +190,11 @@ Convierte minutos a formato legible:
 - `90` → "1h 30min"
 - `120` → "2 horas"
 
+### URL del Video
+
+**[Ver Video en drive](https://drive.google.com/file/d/1wqqwGpyrmoTke8JKO6L5yslmY5hhKG0M/view?usp=sharing)**
+**[Ver Video en driev](https://drive.google.com/file/d/1wwjEces_iaxwnCoej8IzQB683mwvqJXi/view?usp=sharing)**
+
 ## Manual de Usuario
 
 ### 1. Registro e Inicio de Sesión
