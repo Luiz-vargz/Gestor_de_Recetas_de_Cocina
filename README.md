@@ -190,6 +190,13 @@ Convierte minutos a formato legible:
 - `90` → "1h 30min"
 - `120` → "2 horas"
 
+## Deploy en Firebase Hosting
+
+### URL de la Aplicación Desplegada
+
+**[https://recetas-cosinas.web.app](https://luiz-vargz.github.io/Gestor_de_Recetas_de_Cocina/)**
+
+
 ### URL del Video1
 
 **[Ver Video en drive](https://drive.google.com/file/d/1wqqwGpyrmoTke8JKO6L5yslmY5hhKG0M/view?usp=sharing)**
